@@ -1,20 +1,22 @@
 require 'build_engine'
+
 require 'test/unit'
+require 'mocha'
 
-
-class BuildEngine < RubyBuildEngine
 
 class MSTaskTest < Test::Unit::TestCase
-  def test_message_works
-    assert_equal 4, MyMath.run("2+2")
-    assert_equal 4, MyMath.run("1+3")
-    assert_equal 5, MyMath.run("5+0")
-    assert_equal 0, MyMath.run("-5 + 5")
+  
+  def mstask_for_engine(buildEngine)
+    modules = [Microsoft::Build::Tasks]
+    MSTask.new(modules, buildEngine)
+  end
+  
+  def test_message_sends_event
+    buildEngine = RubyBuildEngine.new
+    buildEngine.expects(:log_message_event)
+
+    msbuild = mstask_for_engine(buildEngine)
+    msbuild.Message :text => "Text"
   end
 
-  def test_subtraction
-    assert_equal 0, MyMath.run("2-2")
-    assert_equal 1, MyMath.run("2-1")
-    assert_equal -1, MyMath.run("2-3")
-  end
 end
