@@ -48,7 +48,7 @@ class RubyBuildEngine
   end
 end
 
-class ItemTask
+class TaskItem
   include Microsoft::Build::Framework::ITaskItem
   attr_accessor :item_spec
 
@@ -137,13 +137,13 @@ class MSTask
     itaskitem = Microsoft::Build::Framework::ITaskItem
     value = original_value
     if value.kind_of?(Array)
-      value = System::Array.of(itaskitem).new(original_value.map{|item| ItemTask.new(item)})
+      value = System::Array.of(itaskitem).new(original_value.map{|item| TaskItem.new(item)})
     elsif value.kind_of?(String)
       return_type_name = property.get_get_method.return_type.full_name
       if return_type_name == "System.String"
         value = value.to_clr_string
       else
-        value = System::Array.of(itaskitem).new([value].map{|item| ItemTask.new(item)})
+        value = System::Array.of(itaskitem).new([value].map{|item| TaskItem.new(item)})
       end
     end
     return value
