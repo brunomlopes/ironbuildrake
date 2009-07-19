@@ -8,5 +8,6 @@ end
 
 task :test => [:prerequesite] do
   puts "This is my task"
-  msBuild.Message :text => "This is text message"
+  msBuild.Message :text => "This is a text message"
+  msBuild.Warning :text => "This is a warning"
 end

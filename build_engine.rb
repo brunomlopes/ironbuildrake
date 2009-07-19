@@ -1,49 +1,62 @@
 require 'Microsoft.Build.Tasks'
+require 'logger'
 
 include Microsoft
 
-class RubyBuildEngine 
+class RubyBuildEngine
   include Microsoft::Build::Framework::IBuildEngine
 
-  def BuildProjectFile(projectFileName, # string
-                       targetNames, # string[] 
-                       globalProperties, # IDictionary
-                       targetOutputs #IDictionary
-                       )
+  def initialize(logger)
+    @logger = logger
+  end
+
+  def build_project_file(project_file_name, # string
+  target_names, # string[]
+  global_properties, # IDictionary
+  target_outputs #IDictionary
+  )
     return true
   end
 
   def log_event(e)
-    puts("#{e.Timestamp}:#{e.ThreadId}:#{e.SenderName}:#{e.Message}")
+    @logger.debug("#{e.Timestamp}:#{e.ThreadId}:#{e.SenderName}:#{e.Message}")
   end
-  
+
   def log_custom_event(e) # CustomBuildEventArgs
     log_event(e)
-    puts("\tCustom")
+    @logger.debug("Custom event: " + e.to_s)
   end
+
   def log_error_event(e) #BuildErrorEventArgs
     log_event(e)
-    puts("\tError:#{e.Code}:#{e.ColumnNumber}:#{e.EndColumnNumber}:#{e.EndLineNumber}:#{e.File}:#{e.LineNumber}:#{e.Subcategory}")
+    @logger.error("#{e.Code}:#{e.ColumnNumber}:#{e.EndColumnNumber}:#{e.EndLineNumber}:#{e.File}:#{e.LineNumber}:#{e.Subcategory}")
   end
+
   def log_message_event(e) #BuildMessageEventArgs
     log_event(e)
-    puts("\tMessage:#{e.Importance}:#{e.Message}")
+    # TODO: implement importance (dunno how)
+    @logger.info(e.Message)
   end
+
   def log_warning_event(e) #BuildWarningEventArgs
     log_event(e)
-    puts("\tWarning: #{e.Code}:#{e.ColumnNumber}:#{e.EndColumnNumber}:#{e.EndLineNumber}:#{e.File}:#{e.LineNumber}:#{e.Subcategory}")
+    @logger.warn(e.Message)
+    @logger.debug("#{e.Code}:#{e.ColumnNumber}:#{e.EndColumnNumber}:#{e.EndLineNumber}:#{e.File}:#{e.LineNumber}:#{e.Subcategory}")
   end
-  
-  def column_number_of_task_node() #int
+
+  def column_number_of_task_node() # void => int
     return 1
   end
-  def continue_on_error() #bool
+
+  def continue_on_error() # void => bool
     return true
   end
-  def line_number_of_task_node() #int
+
+  def line_number_of_task_node() # void => int
     return 2
   end
-  def project_file_of_task_node() #string
+
+  def project_file_of_task_node() # void => string
     return "project file"
   end
 end
@@ -109,8 +122,8 @@ class MSTask
   def initialize(modules, build_engine)
     @tasks = tasks_in_modules(modules)
 
-    @tasks.each do |cls| 
-      MSTask.class_eval do 
+    @tasks.each do |cls|
+      MSTask.class_eval do
         define_method cls.to_clr_type.name.to_sym do |args|
           args ||= {}
           instance = cls.new
@@ -118,7 +131,7 @@ class MSTask
 
           properties = instance.class.to_clr_type.get_properties
 
-          args.each_pair do |k,v|
+          args.each_pair do |k, v|
             property = properties.find {|prop| prop.name.downcase == k.to_s.downcase}
             if property == nil
               return
@@ -168,7 +181,9 @@ class MSTask
   end
 end
 
-$buildEngine = RubyBuildEngine.new
+logger = Logger.new(STDOUT)
+logger.level = Logger::INFO
+$buildEngine = RubyBuildEngine.new(logger)
 
 def msBuild()
   modules = [Microsoft::Build::Tasks]
