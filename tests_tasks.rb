@@ -27,8 +27,6 @@ end
 class Delete < Test::Unit::TestCase
   include MSTaskTestUtil
 
-
-
   def test_delete_task_deletes_file
     build_engine = RubyBuildEngine.new
     msbuild = mstask_for_engine(build_engine)
@@ -44,7 +42,7 @@ class Delete < Test::Unit::TestCase
     build_engine = RubyBuildEngine.new
     msbuild = mstask_for_engine(build_engine)
 
-    filenames = Array.new(2) {random_filepath()}
+    filenames = [random_filepath(), random_filepath()]
     filenames.each { |filename| FileUtils.touch filename }
     msbuild.Delete :files => filenames
 
@@ -53,8 +51,10 @@ class Delete < Test::Unit::TestCase
 
   def setup
     @@directory = "temp"
+    @@r = System::Random.new
     clean_and_remove_directory()
     Dir.mkdir(@@directory)
+
   end
 
   def teardown
@@ -67,9 +67,13 @@ class Delete < Test::Unit::TestCase
     end
   end
 
+
   def random_filepath
-    chars = ("a".."z").to_a + ("1".."9").to_a
-    filename = Array.new(8, '').collect{chars[rand(chars.size)]}.join
-    return (Pathname.new(@@directory)+filename).to_s
+
+    number_of_random_chars = 8
+    s = ""
+    number_of_random_chars.times { s << (65 + @@r.Next(26)) }
+    s
   end
+  
 end

@@ -107,21 +107,7 @@ class MSTask
   attr_reader :tasks
 
   def initialize(modules, build_engine)
-    itask = Microsoft::Build::Framework::ITask.to_clr_type
-    itaskitem = Microsoft::Build::Framework::ITaskItem
-    @tasks = []
-    modules.each do |mod|
-      classes = mod.constants.map { |c| mod.class_eval(c) }
-      classes = classes.select do |cls|
-        if !cls.respond_to?(:to_clr_type) || !cls.to_clr_type.respond_to?(:get_interfaces)
-          interfaces = []
-        else
-          interfaces = cls.to_clr_type.get_interfaces()
-          end
-        interfaces.include?(itask)
-      end
-      @tasks.concat(classes)
-    end
+    @tasks = tasks_in_modules(modules)
 
     @tasks.each do |cls| 
       MSTask.class_eval do 
@@ -137,24 +123,48 @@ class MSTask
             if property == nil
               return
             end
+            value = value_for_property(property, v)
 
-            value = v
-            if value.kind_of?(Array)
-              value = System::Array.of(itaskitem).new(v.map{|item| ItemTask.new(item)})
-            elsif value.kind_of?(String)
-              value = value.to_clr_string
-            end
-            begin
-              property.set_value(instance, value, nil)
-            rescue ArgumentError
-              value = System::Array.of(itaskitem).new([value].map{|item| ItemTask.new(item)})
-              property.set_value(instance, value, nil)
-            end
-          end 
+            property.set_value(instance, value, nil)
+          end
           instance.Execute
         end
       end
     end
+  end
+
+  def value_for_property(property, original_value)
+    itaskitem = Microsoft::Build::Framework::ITaskItem
+    value = original_value
+    if value.kind_of?(Array)
+      value = System::Array.of(itaskitem).new(original_value.map{|item| ItemTask.new(item)})
+    elsif value.kind_of?(String)
+      return_type_name = property.get_get_method.return_type.full_name
+      if return_type_name == "System.String"
+        value = value.to_clr_string
+      else
+        value = System::Array.of(itaskitem).new([value].map{|item| ItemTask.new(item)})
+      end
+    end
+    return value
+  end
+
+  def tasks_in_modules(modules)
+    itask = Microsoft::Build::Framework::ITask.to_clr_type
+    tasks = []
+    modules.each do |mod|
+      classes = mod.constants.map { |c| mod.class_eval(c) }
+      classes = classes.select do |cls|
+        if !cls.respond_to?(:to_clr_type) || !cls.to_clr_type.respond_to?(:get_interfaces)
+          interfaces = []
+        else
+          interfaces = cls.to_clr_type.get_interfaces()
+        end
+        interfaces.include?(itask)
+      end
+      tasks.concat(classes)
+    end
+    return tasks
   end
 end
 
