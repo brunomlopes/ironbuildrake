@@ -162,8 +162,8 @@ class MSTask
     return value
   end
 
-  def tasks_in_modules(modules)
-    itask = Microsoft::Build::Framework::ITask.to_clr_type
+  def tasks_in_modules(modules)  
+    itask_fullname = Microsoft::Build::Framework::ITask.to_clr_type.full_name
     tasks = []
     modules.each do |mod|
       classes = mod.constants.map { |c| mod.class_eval(c) }
@@ -171,9 +171,9 @@ class MSTask
         if !cls.respond_to?(:to_clr_type) || !cls.to_clr_type.respond_to?(:get_interfaces)
           interfaces = []
         else
-          interfaces = cls.to_clr_type.get_interfaces()
+          interfaces = cls.to_clr_type.get_interfaces.map{|i| i.full_name}
         end
-        interfaces.include?(itask)
+        interfaces.include?(itask_fullname)
       end
       tasks.concat(classes)
     end
@@ -184,6 +184,26 @@ end
 logger = Logger.new(STDOUT)
 logger.level = Logger::INFO
 $buildEngine = RubyBuildEngine.new(logger)
+
+class AssemblyLoader
+  @@assembly_paths = []
+  
+  def self.add_path(path)
+    @@assembly_paths.push(path)
+  end
+
+  System::AppDomain.current_domain.assembly_resolve do |sender, event| 
+    found_path = nil
+    @@assembly_paths.each do |path|
+      assembly_path = System::IO::Path.get_full_path(path+event.name)
+      if System::IO::File.exists(assembly_path)
+        found_path = assembly_path
+      end
+    end
+    throw System::IO::FileNotFoundException.new(event.name) if not found_path
+    System::Reflection::Assembly.LoadFile(found_path)
+  end
+end
 
 def tasks_for_module(mod)
   MSTask.new([mod], $buildEngine)
