@@ -1,5 +1,7 @@
 require "build_engine.rb"
 
+msbuild = tasks_for_module(Microsoft::Build::Tasks)
+
 task :default => [:test]
 
 task :prerequesite do
@@ -8,6 +10,6 @@ end
 
 task :test => [:prerequesite] do
   puts "This is my task"
-  msBuild.Message :text => "This is a text message"
-  msBuild.Warning :text => "This is a warning"
+  msbuild.Message :text => "This is a text message"
+  msbuild.Warning :text => "This is a warning"
 end

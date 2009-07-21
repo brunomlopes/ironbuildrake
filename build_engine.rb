@@ -185,7 +185,6 @@ logger = Logger.new(STDOUT)
 logger.level = Logger::INFO
 $buildEngine = RubyBuildEngine.new(logger)
 
-def msBuild()
-  modules = [Microsoft::Build::Tasks]
-  MSTask.new(modules, $buildEngine)
+def tasks_for_module(mod)
+  MSTask.new([mod], $buildEngine)
 end
