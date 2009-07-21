@@ -163,7 +163,7 @@ class MSTask
   end
 
   def tasks_in_modules(modules)  
-    itask_fullname = Microsoft::Build::Framework::ITask.to_clr_type.full_name
+    itask_interface = Microsoft::Build::Framework::ITask.to_clr_type
     tasks = []
     modules.each do |mod|
       classes = mod.constants.map { |c| mod.class_eval(c) }
@@ -171,9 +171,9 @@ class MSTask
         if !cls.respond_to?(:to_clr_type) || !cls.to_clr_type.respond_to?(:get_interfaces)
           interfaces = []
         else
-          interfaces = cls.to_clr_type.get_interfaces.map{|i| i.full_name}
+          interfaces = cls.to_clr_type.get_interfaces
         end
-        interfaces.include?(itask_fullname)
+        interfaces.include?(itask_interface)
       end
       tasks.concat(classes)
     end
