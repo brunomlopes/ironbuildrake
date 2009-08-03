@@ -1,7 +1,7 @@
 require 'Microsoft.Build.Tasks'
 require 'logger'
-
-include Microsoft
+require 'targets_file'
+require 'task_library'
 
 class RubyBuildEngine
   include Microsoft::Build::Framework::IBuildEngine
@@ -61,150 +61,12 @@ class RubyBuildEngine
   end
 end
 
-class TaskItem
-  include Microsoft::Build::Framework::ITaskItem
-  attr_accessor :item_spec
-
-  def initialize(str)
-    @item_spec = str
-    @metadata = {}
-  end
-
-  def metadata_count
-    return @metadata.length
-  end
-
-  def metadata_names
-    return @metadata.keys
-  end
-
-  def to_s
-    return @item_spec
-  end
-
-  def get_metadata(metadata_name) # string => string
-    if @metadata.has_key?(metadata_name)
-      return @metadata[metadata_name]
-    else
-      return ""
-    end
-  end
-
-  def set_metadata(metadata_name, metadata_value) # string,string => void
-    @metadata[metadata_name] = metadata_value
-  end
-
-  def remove_metadata(metadata_name) # string => void
-    @metadata.delete(metadata_name) if @metadata.has_key?(metadata_name)
-  end
-
-  def copy_metadata_to(destination_item) #itaskitem => void
-    @metadata.each_pair do |key, value|
-      original_metadata = destination_item.get_metadata(key)
-      if original_metadata == nil or original_metadata == ""
-        destination_item.set_metadata(key, value)
-      end
-    end
-    original_item_spec = destination_item.get_metadata("OriginalItemSpec")
-    if original_item_spec == nil or original_item_spec == ""
-      destination_item.set_metadata("OriginalItemSpec", @item_spec)
-    end
-  end
-
-  def clone_custom_metadata()# void => IDictionary
-    return Hash.new().merge(@metadata)
-  end
-end
-
-class MSTask
-  attr_reader :tasks
-
-  def initialize(modules, build_engine)
-    @tasks = tasks_in_modules(modules)
-
-    @tasks.each do |cls|
-      MSTask.class_eval do
-        define_method cls.to_clr_type.name.to_sym do |args|
-          args ||= {}
-          instance = cls.new
-          instance.BuildEngine = build_engine
-
-          properties = instance.class.to_clr_type.get_properties
-
-          args.each_pair do |k, v|
-            property = properties.find {|prop| prop.name.downcase == k.to_s.downcase}
-            if property == nil
-              return
-            end
-            value = value_for_property(property, v)
-
-            property.set_value(instance, value, nil)
-          end
-          instance.Execute
-        end
-      end
-    end
-  end
-
-  def value_for_property(property, original_value)
-    itaskitem = Microsoft::Build::Framework::ITaskItem
-    value = original_value
-    if value.kind_of?(Array)
-      value = System::Array.of(itaskitem).new(original_value.map{|item| TaskItem.new(item)})
-    elsif value.kind_of?(String)
-      return_type_name = property.get_get_method.return_type.full_name
-      if return_type_name == "System.String"
-        value = value.to_clr_string
-      else
-        value = System::Array.of(itaskitem).new([value].map{|item| TaskItem.new(item)})
-      end
-    end
-    return value
-  end
-
-  def tasks_in_modules(modules)  
-    itask_interface = Microsoft::Build::Framework::ITask.to_clr_type
-    tasks = []
-    modules.each do |mod|
-      classes = mod.constants.map { |c| mod.class_eval(c) }
-      classes = classes.select do |cls|
-        if !cls.respond_to?(:to_clr_type) || !cls.to_clr_type.respond_to?(:get_interfaces)
-          interfaces = []
-        else
-          interfaces = cls.to_clr_type.get_interfaces
-        end
-        interfaces.include?(itask_interface)
-      end
-      tasks.concat(classes)
-    end
-    return tasks
-  end
-end
-
 logger = Logger.new(STDOUT)
 logger.level = Logger::INFO
 $buildEngine = RubyBuildEngine.new(logger)
 
-class AssemblyLoader
-  @@assembly_paths = []
-  
-  def self.add_path(path)
-    @@assembly_paths.push(path)
-  end
 
-  System::AppDomain.current_domain.assembly_resolve do |sender, event| 
-    found_path = nil
-    @@assembly_paths.each do |path|
-      assembly_path = System::IO::Path.get_full_path(path+event.name)
-      if System::IO::File.exists(assembly_path)
-        found_path = assembly_path
-      end
-    end
-    throw System::IO::FileNotFoundException.new(event.name) if not found_path
-    System::Reflection::Assembly.LoadFile(found_path)
-  end
-end
 
 def tasks_for_module(mod)
-  MSTask.new([mod], $buildEngine)
+  TaskLibrary.from_modules($buildEngine, mod)
 end

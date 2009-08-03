@@ -1,15 +1,20 @@
+require 'rubygems'
 require "build_engine.rb"
+require 'rake/testtask'
 
-msbuild = tasks_for_module(Microsoft::Build::Tasks)
 
-task :default => [:test]
+task :default => [:test_units]
 
-task :prerequesite do
-  puts "This is the pre-requesite"
-end
-
+desc "this is just a quick smoke test"
 task :test => [:prerequesite] do
-  puts "This is my task"
+  msbuild = tasks_for_module(Microsoft::Build::Tasks)
   msbuild.Message :text => "This is a text message"
   msbuild.Warning :text => "This is a warning"
+end
+
+desc "Run basic tests"
+Rake::TestTask.new("test_units") do |t|
+  t.pattern = 'tests_*.rb'
+  t.verbose = true
+  t.warning = true
 end
