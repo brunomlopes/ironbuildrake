@@ -11,7 +11,7 @@ class TaskLibrary
   end
 
   def self.from_tasks_file(build_engine, task_file_path)
-    targets = TargetsFile.from_file(task_file_path)
+    targets = TasksFile.from_file(task_file_path)
     targets.load_assemblies()
 
     tasks = targets.task_class_names.map {|class_name| eval(class_name.gsub(/\./,"::"))}

@@ -4,7 +4,7 @@ require "set"
 
 include REXML
 
-class TargetsFile
+class TasksFile
   attr_reader :task_infos, :assembly_file_names, :assembly_names, :task_class_names
   
   def self.from_xml(xml, file_path = nil)
@@ -18,7 +18,7 @@ class TargetsFile
       TaskInfo.new(task_name, assembly_file, assembly_name)
     end
     
-    return TargetsFile.new(tasks, file_path)
+    return TasksFile.new(tasks, file_path)
   end
 
   def self.from_file(file_path)

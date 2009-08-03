@@ -1,5 +1,5 @@
 require "test/unit"
-require "targets_file"
+require "tasks_file"
 
 class TestTargetsFile < Test::Unit::TestCase
   def test_tasks
@@ -9,7 +9,7 @@ class TestTargetsFile < Test::Unit::TestCase
     </Project>
 XML
 
-    targets = TargetsFile.from_xml(text)
+    targets = TasksFile.from_xml(text)
     assert_equal(1, targets.task_infos.size)
     task = targets.task_infos[0]
     assert_equal("Tasks.dll", task.assembly_file)
@@ -24,7 +24,7 @@ XML
     </Project>
 XML
 
-    targets = TargetsFile.from_xml(text)
+    targets = TasksFile.from_xml(text)
     assert_equal(1, targets.assembly_file_names.size)
     assert(targets.assembly_file_names.include?("Tasks.dll"))
   end
@@ -37,7 +37,7 @@ XML
     </Project>
 XML
 
-    targets = TargetsFile.from_xml(text)
+    targets = TasksFile.from_xml(text)
     assert_equal(2, targets.assembly_file_names.size)
     assert(targets.assembly_file_names.include?("Tasks.dll"))
     assert(targets.assembly_file_names.include?("OtherAssembly.dll"))
@@ -47,7 +47,7 @@ XML
     directory = System::Runtime::InteropServices::RuntimeEnvironment.get_runtime_directory
     file_name = "Microsoft.Common.Tasks"
     full_path = System::IO::Path.combine(directory, file_name)
-    targets = TargetsFile.from_file(full_path)
+    targets = TasksFile.from_file(full_path)
 
     assert_equal(41, targets.task_infos.size)
     assert_equal(1, targets.assembly_names.size)
@@ -61,7 +61,7 @@ XML
     directory = System::Environment.expand_environment_variables('%WINDIR%\Microsoft.NET\Framework\v3.5')
     file_name = "Microsoft.Common.Tasks"
     full_path = System::IO::Path.combine(directory, file_name)
-    targets = TargetsFile.from_file(full_path)
+    targets = TasksFile.from_file(full_path)
 
     targets.load_assemblies()
     assert_instance_of(Class, Microsoft::Build::Tasks::AssignProjectConfiguration)
@@ -77,7 +77,7 @@ XML
     </Project>
 XML
 
-    targets = TargetsFile.from_xml(text)
+    targets = TasksFile.from_xml(text)
     assert_equal(1, targets.task_infos.size)
     task = targets.task_infos[0]
     assert_equal("value.Tasks.dll", task.assembly_file)

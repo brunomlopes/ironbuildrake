@@ -1,13 +1,42 @@
 require 'Microsoft.Build.Tasks'
 require 'logger'
-require 'targets_file'
+require 'tasks_file'
 require 'task_library'
 
 class RubyBuildEngine
   include Microsoft::Build::Framework::IBuildEngine
+  # include Microsoft::Build::Framework::IBuildEngine2
+  attr_reader :column_number_of_task_node, :continue_on_error, :line_number_of_task_node,
+               :project_file_of_task_node, :is_running_multiple_nodes
 
   def initialize(logger)
     @logger = logger
+    @column_number_of_task_node = 1
+    @continue_on_error = true
+    @line_number_of_task_node = 2
+    @project_file_of_task_node = "project.file"
+    @is_running_multiple_nodes = false
+  end
+
+
+
+  def build_project_file(project_file_name, # string
+  target_names, # string[]
+  global_properties, # IDictionary
+  target_outputs, #IDictionary
+  tools_version #string
+  )
+    return true
+  end
+
+  def BuildProjectFilesInParallel(project_file_names, #string[]
+  target_names, #string[],
+  global_properties, #IDictionary[]
+  target_outputs_per_project, #IDictionary[]
+  tools_version, #string[]
+  use_results_cache, #bool
+  unload_projects_on_completion) #bool
+    return true
   end
 
   def build_project_file(project_file_name, # string
@@ -44,29 +73,33 @@ class RubyBuildEngine
     @logger.debug("#{e.Code}:#{e.ColumnNumber}:#{e.EndColumnNumber}:#{e.EndLineNumber}:#{e.File}:#{e.LineNumber}:#{e.Subcategory}")
   end
 
-  def column_number_of_task_node() # void => int
-    return 1
-  end
-
-  def continue_on_error() # void => bool
-    return true
-  end
-
-  def line_number_of_task_node() # void => int
-    return 2
-  end
-
-  def project_file_of_task_node() # void => string
-    return "project file"
-  end
 end
 
 logger = Logger.new(STDOUT)
 logger.level = Logger::INFO
-$buildEngine = RubyBuildEngine.new(logger)
+$build_engine = RubyBuildEngine.new(logger)
 
 
 
-def tasks_for_module(mod)
-  TaskLibrary.from_modules($buildEngine, mod)
+def tasks_from_module(mod)
+  TaskLibrary.from_modules($build_engine, mod)
+end
+
+def tasks_from_file(tasks_file)
+  TaskLibrary.from_tasks_file($build_engine, tasks_file)
+end
+
+def tasks_from_msbuild_2_0()
+  load_assembly 'Microsoft.Build.Tasks, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a'
+  #directory = System::Runtime::InteropServices::RuntimeEnvironment.get_runtime_directory
+  #file_name = "Microsoft.Common.Tasks"
+  #full_path = System::IO::Path.combine(directory, file_name)
+  return TaskLibrary.from_modules($build_engine, Microsoft::Build::Tasks)
+end
+
+def tasks_from_msbuild_3_5()
+   directory = System::Environment.expand_environment_variables('%WINDIR%\Microsoft.NET\Framework\v3.5')
+   file_name = "Microsoft.Common.Tasks"
+   full_path = System::IO::Path.combine(directory, file_name)
+   return TaskLibrary.from_tasks_file($build_engine, full_path)
 end

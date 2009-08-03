@@ -7,7 +7,7 @@ task :default => [:test_units]
 
 desc "this is just a quick smoke test"
 task :test => [:prerequesite] do
-  msbuild = tasks_for_module(Microsoft::Build::Tasks)
+  msbuild = tasks_from_module(Microsoft::Build::Tasks)
   msbuild.Message :text => "This is a text message"
   msbuild.Warning :text => "This is a warning"
 end

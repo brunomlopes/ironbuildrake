@@ -6,6 +6,7 @@ require 'mocha'
 require 'pathname'
 require 'stringio'
 
+load_assembly 'Microsoft.Build.Tasks.v3.5, Version=3.5.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a'
 
 module MSTaskTestUtil
   def mstask_for_engine(build_engine)
