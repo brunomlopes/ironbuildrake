@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+
+  <Target Name="SetupProperties">
+    <CreateProperty Condition="'$(VersionName)'!='' AND '$(MinorBranchFolder)'!='/'" 
+                    Value="$/$(ProductDepotName)/$(VersionName)/$(MinorBranchFolder)/">
+      <Output TaskParameter="Value" PropertyName="DepotRootPath"/>
+    </CreateProperty>
+
+    <CreateProperty Condition="'$(VersionName)'!='' AND '$(MinorBranchFolder)'=='/'" 
+                    Value="$/$(ProductDepotName)/$(VersionName)/" >
+      <Output TaskParameter="Value" PropertyName="DepotRootPath"/>
+    </CreateProperty>
+
+    <CreateProperty Condition="'$(VersionName)'=='' AND '$(MinorBranchFolder)'=='/'" 
+                    Value="$/$(ProductDepotName)/" >
+      <Output TaskParameter="Value" PropertyName="DepotRootPath"/>
+    </CreateProperty>
+    
+    <Message Text="Depot root path: $(DepotRootPath)"/>
+    <Message Text="Last known good label: $(LatestGoodBuildLabel)"/>
+    <Message Text="Last known bad build label: $(LatestBadBuildLabel)"/>
+  </Target>
+  
+  <Target Name="BranchDepot_SourceControl">
+  
+  <!-- Changed to label instead of branch [jedfarr] -->
+  
+    <!--<SourceTfs.CreateBranch 
+        SourcePath="$/$(ProductDepotName)$(VersionName)/Src"
+        DestinationPath="$/$(ProductDepotName)$(VersionName)/b$(ProductNameBranchPrefix)_$(VersionName)_$(VersionNumber)" />-->
+
+    <SourceTfs.LabelSync
+          Condition = "'$(SourceControl)'=='TFS'" 
+          ContinueOnError="true"
+          Path="$(DepotRootPath)"
+          Label="$(ProductNameBranchPrefix)_$(VersionName)_$(VersionNumber)" />
+    
+  </Target>
+  
+  <Target Name="CheckDepotForChangesContinuous_SourceControl" DependsOnTargets="SetupProperties">
+    <SourceTfs.Changes Path="$(DepotRootPath)" Label="$(LatestGoodBuildLabel)">
+      <Output TaskParameter="ChangesFound" PropertyName="FilesChanged"></Output>
+    </SourceTfs.Changes>
+    <SourceTfs.Changes Path="$(DepotRootPath)" Label="$(LatestBadBuildLabel)" Condition="'$(FilesChanged)'=='true'" >
+      <Output TaskParameter="ChangesFound" PropertyName="FilesChanged"></Output>
+    </SourceTfs.Changes>
+    <Message Text="Files have changed since last build (good or bad): $(FilesChanged)"/>
+  </Target>
+
+  <Target Name="GetUsersForChangelists_SourceControl" Condition="'$(SourceControl)'=='TFS'" DependsOnTargets="SetupProperties">
+    <SourceTfs.GetChangelistFromDateTime
+        Path="$(DepotRootPath)"
+        DateTime="$(SyncDateTime)"
+        Culture="$(Culture)">
+      <Output TaskParameter="ChangeList" PropertyName="CurrentChangeList" />
+    </SourceTfs.GetChangelistFromDateTime>
+    <SourceTfs.GetChangelistFromLabel
+        Path="$(DepotRootPath)"
+        Label="$(LatestGoodBuildLabel)">
+      <Output TaskParameter="ChangeList" PropertyName="LabelChangeList" />
+    </SourceTfs.GetChangelistFromLabel>
+    <SourceTfs.GetUsersForChangelists
+        Path="$(DepotRootPath)"
+        Start="$(LabelChangeList)"
+        End="$(CurrentChangelist)"
+        ExcludedUsers="sdc_bld;build;$(BuildUser)">
+      <Output TaskParameter="Users" ItemName="ChangeListUsers"></Output>
+    </SourceTfs.GetUsersForChangelists>
+    
+    <Message Text="Current ChangeList : $(CurrentChangeList)" />
+    <Message Text="ChangeLists Since last build: $(LabelChangeList)" />
+    <Message Text="ChangeList Users: @(ChangeListUsers)" />
+
+    <!-- abort if there are no changelist users (the changes must all belong to build). -->
+    <CreateProperty Value="true" 
+        Condition="'@(ChangeListUsers)'=='' AND '$(ForceBuild)'!='true' AND '$(SourceControl)'!='VSS'">
+      <Output TaskParameter="ValueSetByTask" PropertyName="AbandonBuild"></Output>
+    </CreateProperty>
+
+    <Error Text="Abandoning build since there are no changes from users" 
+        Condition="'$(AbandonBuild)'=='true'" />    
+  </Target>
+  
+  <Target Name="SyncSourceControl_SourceControl">
+    <SourceTfs.Sync Force="$(SyncForce)" />
+  </Target>
+  
+    <Target Name="UpdateVersionNumber_SourceControl">
+    <SourceTfs.Checkout Path="$(VersionXmlFile)" />
+    <VersionNumber.Update
+        SkipSourceControl="true"
+        VersionNumberConfigFileLocation="$(VersionXmlFile)"
+        VersionNumberFormat = "$(VersionNumberFormat)"
+        OnlyIncrementRevision="$(OnlyIncrementRevision)">
+      <Output TaskParameter="VersionNumber" PropertyName="VersionNumber" />
+    </VersionNumber.Update>
+    <SourceTfs.Checkin Path="$(VersionXmlFile)" Comments="Auto update by $(BuildType) build."/>
+  </Target>
+  
+  <Target Name="LabelBad_SourceControl" DependsOnTargets="SetupProperties">
+    <SourceTfs.LabelSync
+        Condition = "'$(SourceControl)'=='TFS'" 
+        ContinueOnError="true"
+        Path="$(DepotRootPath)"
+        Label="$(LatestBadBuildLabel)" />
+  </Target>
+
+  <Target Name="LabelLatest_SourceControl" DependsOnTargets="SetupProperties" >
+
+    <SourceTfs.LabelSync Condition="'$(SourceControl)'=='TFS'" 
+        Path="$(DepotRootPath)"
+        Label="$(LatestGoodBuildLabel)" />
+  </Target>
+  
+</Project>

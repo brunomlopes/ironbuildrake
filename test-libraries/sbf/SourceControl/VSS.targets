@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <Target Name="BranchDepot_SourceControl">
+    <!-- Not yet supported in VSS-->
+  </Target>
+  
+    <Target Name="CheckDepotForChangesContinuous_SourceControl">
+    <CreateProperty Value="$/POC$(VSSProductDepotName)$(VersionName)/$(MinorBranchFolder)/..." >
+      <Output TaskParameter="Value" PropertyName="SourceSafeRootPath"/>
+    </CreateProperty>
+
+    <!-- This task does the difference of local copy with the VSS and tells if any files have been modified since last build -->
+    <SourceSafe.Changes Condition="'$(ForceBuild)'!='true'"
+      Project="$(VSSProject)" 
+      Database="$(VSSDatabase)"
+      Username="$(VSSUser)"
+      Password="$(VSSPassword)"
+      WorkingDirectory="$(VSSWorkingDirectory)"
+      >
+      <Output TaskParameter="ChangesFound" PropertyName="FilesChanged"></Output>
+    </SourceSafe.Changes>
+  </Target>  
+  
+  <Target Name="GetUsersForChangelists_SourceControl" Condition="'$(SourceControl)'=='VSS'">
+    <!-- VSS Does not support this feature -->
+    <CreateProperty Value="">
+      <Output TaskParameter="ValueSetByTask" ItemName="ChangeListUsers"></Output>
+    </CreateProperty>
+  </Target>
+    
+    <Target Name="SyncSourceControl_SourceControl">
+    <SourceSafe.Get 
+                Database="$(VSSDatabase)"
+                Project="$(VSSProject)"
+                WorkingDirectory="$(VSSWorkingDirectory)"
+                Username="$(VSSUser)"
+                Password="$(VSSPassword)"
+                VersionNumberConfigVSSLocation="$(VSSVersionNumberConfigVSSLocation)"
+                VersionNumberConfigFileLocation="$(VSSVersionNumberConfigFileLocation)">
+    </SourceSafe.Get>
+  </Target>
+
+  
+  <Target Name="UpdateVersionNumber_SourceControl">
+    <VersionNumber.VSSUpdate
+       ConfigVssLocation="$(VSSVersionNumberConfigVSSLocation)"
+       ConfigFileLocation="$(VSSVersionNumberConfigFileLocation)"
+       UseVss="TRUE"
+       VersionNumberFormat = "$(VersionNumberFormat)"
+       OnlyIncrementRevision="$(OnlyIncrementRevision)"
+       Database="$(VSSDatabase)"
+       Username="$(VSSUser)"
+       Password="$(VSSPassword)"
+       >
+      <Output TaskParameter="VersionNumber" PropertyName="VersionNumber" />
+    </VersionNumber.VSSUpdate>
+  </Target>
+
+
+  <Target Name="LabelBad_SourceControl">
+   <!-- Not yet supported in VSS-->
+  </Target>
+  
+  <Target Name="LabelLatest_SourceControl">
+
+    <SourceSafe.LabelLatest
+      Condition="$(SourceControl)=='VSS'" 
+       Database="$(VSSDatabase)"
+       Project="$(VSSProject)"
+       Username="$(VSSUser)"
+       Password="$(VSSPassword)"
+       Label="v$(VersionNumber)"
+      >
+    </SourceSafe.LabelLatest>
+  </Target>
+	
+</Project>
