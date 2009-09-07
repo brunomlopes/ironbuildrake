@@ -6,7 +6,7 @@ require 'rake/testtask'
 task :default => [:test_units]
 
 desc "this is just a quick smoke test"
-task :test => [:prerequesite] do
+task :test do
   msbuild = tasks_from_module(Microsoft::Build::Tasks)
   msbuild.Message :text => "This is a text message"
   msbuild.Warning :text => "This is a warning"

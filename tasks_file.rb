@@ -6,7 +6,7 @@ include REXML
 
 class TasksFile
   attr_reader :task_infos, :assembly_file_names, :assembly_names, :task_class_names
-  
+
   def self.from_xml(xml, file_path = nil)
     document = Document.new(xml)
     properties = PropertyGroups.from_xml(xml)
@@ -17,7 +17,7 @@ class TasksFile
       task_name = properties.replace_variables_in(element.attributes["TaskName"])
       TaskInfo.new(task_name, assembly_file, assembly_name)
     end
-    
+
     return TasksFile.new(tasks, file_path)
   end
 
@@ -43,7 +43,7 @@ class TasksFile
       assembly_file = System::IO::Path.get_file_name(assembly_file_name)
       load_assembly(assembly_file)
     end
-    
+
     @assembly_names.each do |assembly_name|
       load_assembly(assembly_name)
     end
@@ -52,9 +52,12 @@ end
 
 class TaskInfo
   attr_reader :task_name, :assembly_file, :assembly_name
-  
+
   def initialize(task_name, assembly_file, assembly_name)
     @task_name = task_name
+    while assembly_file =~ /\\\\/
+      assembly_file.gsub!(/\\\\/,"\\")
+    end
     @assembly_file = assembly_file
     @assembly_name = assembly_name
   end
@@ -62,7 +65,7 @@ end
 
 class PropertyGroups
   attr_reader :elements
-  
+
   def self.from_xml(xml)
     document = Document.new(xml)
     properties = Hash.new
@@ -83,7 +86,7 @@ class PropertyGroups
       end
     end
   end
-  
+
   def replace_variables_in(str)
     replaced_value = str
     while @variable_regexp.match(replaced_value)

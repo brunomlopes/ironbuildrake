@@ -14,7 +14,15 @@ class TaskLibrary
     targets = TasksFile.from_file(task_file_path)
     targets.load_assemblies()
 
-    tasks = targets.task_class_names.map {|class_name| eval(class_name.gsub(/\./,"::"))}
+    tasks = targets.task_class_names.map do |class_name|
+      begin
+        ruby_class_name = class_name.gsub(/\./,"::")
+        eval(ruby_class_name)
+      rescue NameError
+        puts "Error loading task class #{ruby_class_name}"
+      end
+    end
+    tasks = tasks.delete_if{ |task| task == nil}
     return TaskLibrary.new(build_engine, tasks)
   end
 

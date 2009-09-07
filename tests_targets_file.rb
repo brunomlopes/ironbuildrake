@@ -56,7 +56,7 @@ XML
            " #{targets.assembly_names.to_a} does not include #{tasks_assembly_name}")
   end
 
-  
+
   def test_tasks_can_load_msbuild_v3_5_tasks_assembly
     directory = System::Environment.expand_environment_variables('%WINDIR%\Microsoft.NET\Framework\v3.5')
     file_name = "Microsoft.Common.Tasks"
@@ -82,6 +82,41 @@ XML
     task = targets.task_infos[0]
     assert_equal("value.Tasks.dll", task.assembly_file)
     assert_equal("UpdateDependencies", task.task_name)
+  end
+
+  def test_sdc_task_with_properties
+    text = <<XML
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <BuildPath Condition="'$(BuildPath)'==''">$(MSBuildProjectDirectory)\\</BuildPath>
+    <TasksPath Condition="Exists('$(BuildPath)\\bin\\Microsoft.Sdc.Tasks.dll')">$(BuildPath)\\bin\\</TasksPath>
+  </PropertyGroup>
+  <UsingTask AssemblyFile="$(TasksPath)Microsoft.Sdc.Tasks.dll" TaskName="Microsoft.Sdc.Tasks.ActiveDirectory.Group.AddUser" />
+</Project>
+XML
+    targets = TasksFile.from_xml(text)
+    assert_equal(1, targets.task_infos.size)
+    task = targets.task_infos[0]
+    assert_equal("\\bin\\Microsoft.Sdc.Tasks.dll", task.assembly_file)
+    assert_equal("Microsoft.Sdc.Tasks.ActiveDirectory.Group.AddUser", task.task_name)
+  end
+end
+
+class TestTaskInfo < Test::Unit::TestCase
+  def test_task_info_fixes_file_with_two_backslashes
+    task_name = "not relevant"
+    assembly_file = "\\\\bin\\AssemblyFile.dll"
+    assembly_name = "AssemblyFile"
+    task_info = TaskInfo.new(task_name, assembly_file, assembly_name)
+    assert_equal("\\bin\\AssemblyFile.dll", task_info.assembly_file)
+  end
+
+  def test_task_info_fixes_file_with_way_too_many_backslashes
+    task_name = "not relevant"
+    assembly_file = "\\subdir\\\\dir\\\\\\bin\\\\\\\\AssemblyFile.dll"
+    assembly_name = "AssemblyFile"
+    task_info = TaskInfo.new(task_name, assembly_file, assembly_name)
+    assert_equal("\\subdir\\dir\\bin\\AssemblyFile.dll", task_info.assembly_file)
   end
 end
 
@@ -154,5 +189,21 @@ XML
 XML
 
     PropertyGroups.from_xml(text)
+  end
+
+  "regression"
+  def test_properties_from_sdc
+    text = <<XML
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <BuildPath Condition="'$(BuildPath)'==''">$(MSBuildProjectDirectory)\\</BuildPath>
+    <TasksPath Condition="Exists('$(BuildPath)\\bin\\Microsoft.Sdc.Tasks.dll')">$(BuildPath)\\bin\\</TasksPath>
+  </PropertyGroup>
+</Project>
+XML
+
+    properties = PropertyGroups.from_xml(text)
+    assert_equal("\\", properties.BuildPath)
+    assert_equal("\\\\bin\\", properties.TasksPath)
   end
 end

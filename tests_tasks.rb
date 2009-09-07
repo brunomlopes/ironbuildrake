@@ -6,8 +6,6 @@ require 'mocha'
 require 'pathname'
 require 'stringio'
 
-load_assembly 'Microsoft.Build.Tasks.v3.5, Version=3.5.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a'
-
 module MSTaskTestUtil
   def mstask_for_engine(build_engine)
     TaskLibrary.from_modules(build_engine, Microsoft::Build::Tasks)
@@ -18,11 +16,14 @@ module MSTaskTestUtil
     @output_logger = Logger.new(@output)
     return RubyBuildEngine.new(@output_logger)
   end
+  def mstask_library()
+    mstask_for_engine(default_ruby_build_engine())
+  end
 end
 
 class Message < Test::Unit::TestCase
   include MSTaskTestUtil
-  
+
   def test_send_event_to_build_engine
     build_engine = default_ruby_build_engine()
     build_engine.expects(:log_message_event)
@@ -39,6 +40,21 @@ class Message < Test::Unit::TestCase
                    "Text not found in output")
   end
 end
+
+class CommonMsbuildTasksAreLoaded < Test::Unit::TestCase
+  include MSTaskTestUtil
+
+  def test_delete
+    library = mstask_library()
+    assert_respond_to library , :Delete
+  end
+
+  def test_message
+    library = mstask_library()
+    assert_respond_to library , :Message
+  end
+end
+
 
 class Delete < Test::Unit::TestCase
   include MSTaskTestUtil
@@ -85,7 +101,7 @@ class Delete < Test::Unit::TestCase
 
   def random_filepath
     number_of_random_chars = 8
-    s = ""
+    s = @@directory+"/"
     number_of_random_chars.times { s << (65 + @@r.Next(26)) }
     s
   end
