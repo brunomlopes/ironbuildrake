@@ -4,7 +4,7 @@ class AssemblyLoader
   @@assembly_paths = Set.new
 
   def self.add_path(path)
-    raise Exception.new "Path cannot be nil" if path == nil
+    raise Exception.new("Path cannot be nil") if path == nil
     @@assembly_paths.add(path) if path != nil
   end
 
