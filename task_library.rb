@@ -29,25 +29,24 @@ class TaskLibrary
   def initialize(build_engine, tasks)
     @tasks = tasks
     @tasks.each do |cls|
-      TaskLibrary.class_eval do
-        define_method cls.to_clr_type.name.to_sym do |args|
-          args ||= {}
-          instance = cls.new
-          instance.BuildEngine = build_engine
+      method_name = cls.to_clr_type.name.to_sym
+      self.metaclass.send :define_method, method_name do |args|
+        args ||= {}
+        instance = cls.new
+        instance.BuildEngine = build_engine
 
-          properties = instance.class.to_clr_type.get_properties
+        properties = instance.class.to_clr_type.get_properties
 
-          args.each_pair do |k, v|
-            property = properties.find {|prop| prop.name.downcase == k.to_s.downcase}
-            if property == nil
-              return
-            end
-            value = value_for_property(property, v)
-
-            property.set_value(instance, value, nil)
+        args.each_pair do |k, v|
+          property = properties.find {|prop| prop.name.downcase == k.to_s.downcase}
+          if property == nil
+            return
           end
-          instance.Execute
+          value = value_for_property(property, v)
+
+          property.set_value(instance, value, nil)
         end
+        instance.Execute
       end
     end
   end
@@ -84,5 +83,11 @@ class TaskLibrary
       tasks.concat(classes)
     end
     return tasks
+  end
+
+  def metaclass
+    class << self
+      self
+    end
   end
 end
