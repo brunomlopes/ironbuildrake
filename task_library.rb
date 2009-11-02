@@ -30,7 +30,7 @@ class TaskLibrary
     @root_namespace = NamespaceNode.new("")
     @tasks = tasks
     namespaces = Set.new(@tasks.map{ |cls| cls.to_clr_type.namespace })
-
+  
     namespaces.each do |namespace|
       next if namespace.strip.size == 0
 
@@ -44,9 +44,10 @@ class TaskLibrary
     end
 
     @tasks.each do |cls|
-      define_execute_method(build_engine, cls)
-      #task_namespace = cls.to_clr_type.namespace.split(".")
-      #@root_namespace.add_object(cls.to_clr_type.name.to_sym, lambda { execute_method(build_engine, cls) }, *task_namespace)
+      method_name = cls.to_clr_type.name.to_sym
+      task_namespace = cls.to_clr_type.namespace.split(".")
+      define_execute_method(method_name, build_engine, cls)
+      @root_namespace.add_object(method_name, lambda {|args| execute_method(build_engine, cls, args) }, *task_namespace)
     end
   end
 
@@ -56,8 +57,7 @@ class TaskLibrary
     end
   end
 
-  def define_execute_method(build_engine, cls)
-    method_name = cls.to_clr_type.name.to_sym
+  def define_execute_method(method_name, build_engine, cls)
     self.metaclass.send :define_method, method_name do |args|
       execute_method(build_engine, cls, args)
     end
@@ -80,14 +80,6 @@ class TaskLibrary
       property.set_value(instance, value, nil)
     end
     instance.Execute
-  end
-
-  def define_namespace(namespace)
-    split_namespace = namespace.split(".")
-    while split_namespace.size > 0
-      part = split_namespace.shift
-
-    end
   end
 
   def value_for_property(property, original_value)

@@ -1,5 +1,5 @@
 class NamespaceNode
-  attr_reader :name
+  attr_reader :name, :children
   def initialize(name)
     @name = name
     @children = { }
@@ -28,7 +28,9 @@ class NamespaceNode
     raise Exception.new("Node #{@name} already has object with name #{name}") if @objects.has_key? name
 
     if namespaces.length > 0
-      @children[namespaces.shift].add_object(name, object, *namespaces)
+      next_namespace = namespaces.shift.to_s
+      raise Exception.new("No namespace with name #{next_namespace} found") if not @children.has_key?(next_namespace)
+      @children[next_namespace].add_object(name, object, *namespaces)
     else
       @objects[name] = object
       self.metaclass.send :define_method, name do
