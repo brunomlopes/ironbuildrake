@@ -1,6 +1,6 @@
 require 'task_item'
 require 'assembly_loader'
-
+require 'namespace_node'
 
 class TaskLibrary
   attr_reader :tasks
@@ -27,27 +27,66 @@ class TaskLibrary
   end
 
   def initialize(build_engine, tasks)
+    @root_namespace = NamespaceNode.new("")
     @tasks = tasks
-    @tasks.each do |cls|
-      method_name = cls.to_clr_type.name.to_sym
-      self.metaclass.send :define_method, method_name do |args|
-        args ||= {}
-        instance = cls.new
-        instance.BuildEngine = build_engine
+    namespaces = Set.new(@tasks.map{ |cls| cls.to_clr_type.namespace })
 
-        properties = instance.class.to_clr_type.get_properties
+    namespaces.each do |namespace|
+      next if namespace.strip.size == 0
 
-        args.each_pair do |k, v|
-          property = properties.find {|prop| prop.name.downcase == k.to_s.downcase}
-          if property == nil
-            return
-          end
-          value = value_for_property(property, v)
+      split_namespaces = String.new(namespace).split(".")
+      define_root_namespace_method(split_namespaces[0])
 
-          property.set_value(instance, value, nil)
-        end
-        instance.Execute
+      node = @root_namespace
+      while split_namespaces.size > 0
+        node = node.add_child(split_namespaces.shift)
       end
+    end
+
+    @tasks.each do |cls|
+      define_execute_method(build_engine, cls)
+      #task_namespace = cls.to_clr_type.namespace.split(".")
+      #@root_namespace.add_object(cls.to_clr_type.name.to_sym, lambda { execute_method(build_engine, cls) }, *task_namespace)
+    end
+  end
+
+  def define_root_namespace_method(namespace)
+    self.metaclass.send :define_method, namespace do
+      @root_namespace.send namespace
+    end
+  end
+
+  def define_execute_method(build_engine, cls)
+    method_name = cls.to_clr_type.name.to_sym
+    self.metaclass.send :define_method, method_name do |args|
+      execute_method(build_engine, cls, args)
+    end
+  end
+
+  def execute_method(build_engine, cls, args)
+    args ||= {}
+    instance = cls.new
+    instance.BuildEngine = build_engine
+
+    properties = instance.class.to_clr_type.get_properties
+
+    args.each_pair do |k, v|
+      property = properties.find {|prop| prop.name.downcase == k.to_s.downcase}
+      if property == nil
+        return
+      end
+      value = value_for_property(property, v)
+
+      property.set_value(instance, value, nil)
+    end
+    instance.Execute
+  end
+
+  def define_namespace(namespace)
+    split_namespace = namespace.split(".")
+    while split_namespace.size > 0
+      part = split_namespace.shift
+
     end
   end
 
