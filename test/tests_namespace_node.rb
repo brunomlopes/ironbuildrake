@@ -1,6 +1,7 @@
 require 'rubygems'
 require 'test/unit'
 require 'namespace_node'
+require 'helper'
 
 class TestNamespaceNodes < Test::Unit::TestCase
   def test_node_can_add_children

@@ -1,5 +1,6 @@
 require "test/unit"
 require "tasks_file"
+require 'helper'
 
 class TestTargetsFile < Test::Unit::TestCase
   def test_tasks

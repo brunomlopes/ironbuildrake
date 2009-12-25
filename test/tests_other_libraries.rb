@@ -5,6 +5,7 @@ require 'test/unit'
 require 'mocha'
 require 'pathname'
 require 'stringio'
+require 'helper'
 
 module TaskLibraryMixin
   def build_engine
@@ -35,7 +36,7 @@ class MSBuildCommunityTasks < Test::Unit::TestCase
   end
 
   def setup
-    @tasks_file = "test-libraries/MSBuildCommunityTasks/MSBuild.Community.Tasks.Targets"
+    @tasks_file = "test/test-libraries/MSBuildCommunityTasks/MSBuild.Community.Tasks.Targets"
   end
 end
 
@@ -47,6 +48,6 @@ class SBF #< Test::Unit::TestCase
   end
 
   def setup
-    @tasks_file = "test-libraries/sbf/Microsoft.Sdc.Common.tasks"
+    @tasks_file = "test/test-libraries/sbf/Microsoft.Sdc.Common.tasks"
   end
 end

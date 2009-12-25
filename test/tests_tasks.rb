@@ -5,6 +5,7 @@ require 'test/unit'
 require 'mocha'
 require 'pathname'
 require 'stringio'
+require 'helper'
 
 module MSTaskTestUtil
   def mstask_for_engine(build_engine)

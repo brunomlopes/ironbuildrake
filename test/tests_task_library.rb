@@ -2,6 +2,7 @@ require 'rubygems'
 require 'test/unit'
 require 'mocha'
 require 'task_library'
+require 'helper'
 
 module TestNamespace
   class TestTask
