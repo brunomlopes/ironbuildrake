@@ -30,7 +30,7 @@ class TaskLibrary
     @root_namespace = NamespaceNode.new("")
     @tasks = tasks
     namespaces = Set.new(@tasks.map{ |cls| cls.to_clr_type.namespace })
-  
+
     namespaces.each do |namespace|
       next if namespace.strip.size == 0
 
@@ -96,6 +96,10 @@ class TaskLibrary
       end
     end
     return value
+  end
+
+  def to_s()
+    return "Library with {@tasks.size} tasks"
   end
 
   def self.tasks_in_modules(modules)

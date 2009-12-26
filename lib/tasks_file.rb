@@ -66,19 +66,37 @@ end
 class PropertyGroups
   attr_reader :elements
 
+  def self.from_file(file_path)
+    return PropertyGroups.new().add_file(file_path)
+  end
+
   def self.from_xml(xml)
+    return PropertyGroups.new().add_xml(xml)
+  end
+
+  def initialize()
+    @variable_regexp = /\$\([\w]+\)/
+    @elements = Hash.new
+  end
+
+  def add_file(file_path)
+    return self.add_xml(File.read(file_path))
+  end
+
+  def add_xml(xml)
     document = Document.new(xml)
     properties = Hash.new
     document.elements.each("Project/PropertyGroup/*") do |element|
       properties[element.name] = element.text.strip
     end
-    return PropertyGroups.new(properties)
+
+    @elements = @elements.merge(properties)
+    gen_methods_for_properties(properties)
+    return self
   end
 
-  def initialize(elements)
-    @variable_regexp = /\$\([\w]+\)/
-    @elements = elements
-    elements.each_pair do |key, value|
+  def gen_methods_for_properties(properties)
+    properties.each_pair do |key, value|
       PropertyGroups.class_eval do
         define_method key.to_sym do ||
           return replace_variables_in(value)

@@ -89,6 +89,11 @@ def tasks_from_file(tasks_file)
   TaskLibrary.from_tasks_file($build_engine, tasks_file)
 end
 
+def properties_from_file(properties_file)
+  PropertyGroups.from_file(properties_file)
+end
+
+
 def tasks_from_msbuild_2_0()
   load_assembly 'Microsoft.Build.Tasks, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a'
   #directory = System::Runtime::InteropServices::RuntimeEnvironment.get_runtime_directory
