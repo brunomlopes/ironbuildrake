@@ -8,11 +8,12 @@ begin
   require 'jeweler'
   Jeweler::Tasks.new do |gem|
     gem.name = "ironbuildrake"
-    gem.summary = %Q{TODO: one-line summary of your gem}
-    gem.description = %Q{TODO: longer description of your gem}
+    gem.summary = %Q{Adds support for using msbuild tasks in ironruby with rake }
+    gem.description = %Q{}
     gem.email = "brunomlopes@gmail.com"
     gem.homepage = "http://github.com/brunomlopes/ironbuildrake"
     gem.authors = ["Bruno Lopes"]
+    gem.files = FileList["[A-Z]*", "{lib, test}/**/*" ]
     # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
   end
   Jeweler::GemcutterTasks.new
