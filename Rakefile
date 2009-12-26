@@ -14,6 +14,7 @@ begin
     gem.homepage = "http://github.com/brunomlopes/ironbuildrake"
     gem.authors = ["Bruno Lopes"]
     gem.files = FileList["[A-Z]*", "{lib, test}/**/*" ]
+    gem.platform = "ironruby"
     # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
   end
   Jeweler::GemcutterTasks.new
