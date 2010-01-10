@@ -1,3 +1,4 @@
+require 'log'
 require 'task_item'
 require 'assembly_loader'
 require 'namespace_node'
@@ -29,6 +30,8 @@ class TaskLibrary
   def initialize(build_engine, tasks)
     @root_namespace = NamespaceNode.new("")
     @tasks = tasks
+    @logger = $logger
+
     namespaces = Set.new(@tasks.map{ |cls| cls.to_clr_type.namespace })
 
     namespaces.each do |namespace|
@@ -64,35 +67,54 @@ class TaskLibrary
   end
 
   def execute_method(build_engine, cls, args)
+
     args ||= {}
     instance = cls.new
     instance.BuildEngine = build_engine
+
+    @logger.debug("execute_method for #{cls} with #{args.inspect}")
 
     properties = instance.class.to_clr_type.get_properties
 
     args.each_pair do |k, v|
       property = properties.find {|prop| prop.name.downcase == k.to_s.downcase}
-      if property == nil
-        return
+      if property != nil
+        value = value_for_property(property, v)
+        @logger.debug("execute_method #{property} -> #{value.inspect}")
+        property.set_value(instance, value, nil)
+      else
+        @logger.warn("Property #{k} not found in #{cls}")
       end
-      value = value_for_property(property, v)
-
-      property.set_value(instance, value, nil)
     end
-    instance.Execute
+    result = instance.Execute
+    @logger.debug("result: "+result.to_s)
   end
 
   def value_for_property(property, original_value)
-    itaskitem = Microsoft::Build::Framework::ITaskItem
+    arrayOfStrings = System::Array.of(System::String)
+    arrayOfITaskItems = System::Array.of(Microsoft::Build::Framework::ITaskItem)
+
     value = original_value
-    if value.kind_of?(Array)
-      value = System::Array.of(itaskitem).new(original_value.map{|item| TaskItem.new(item)})
-    elsif value.kind_of?(String)
-      return_type_name = property.get_get_method.return_type.full_name
-      if return_type_name == "System.String"
-        value = value.to_clr_string
+    # try and figure out what kind of value the property will accept
+    # and adapt the value given to it
+    if property.property_type.is_array
+      if not value.kind_of?(Array)
+        value = [value]
+      end
+      if property.property_type == arrayOfStrings.to_clr_type
+        value = arrayOfStrings.new(value.map{ |v| v.to_s.to_clr_string })
+      elsif property.property_type == arrayOfITaskItems.to_clr_type
+        value = arrayOfITaskItems.new(value.map{ |v| TaskItem.new(v) })
       else
-        value = System::Array.of(itaskitem).new([value].map{|item| TaskItem.new(item)})
+        raise "Property type #{property.property_type} is not handled"
+      end
+    else
+      if property.property_type == System::String.to_clr_type
+        value = value.to_s.to_clr_string
+      elsif property.property_type == Microsoft::Build::Framework::ITaskItem
+        value = TaskItem.new(value)
+      else
+        raise "Property type #{property.property_type} is not handled"
       end
     end
     return value

@@ -1,5 +1,5 @@
 require 'Microsoft.Build.Tasks'
-require 'logger'
+require 'log'
 require 'tasks_file'
 require 'task_library'
 
@@ -26,6 +26,7 @@ class RubyBuildEngine
   target_outputs, #IDictionary
   tools_version #string
   )
+    @logger.debug("build_project_file #{project_file_name}, #{target_names}, #{global_properties}, #{target_outputs}, #{tools_version}")
     return true
   end
 
@@ -36,6 +37,7 @@ class RubyBuildEngine
   tools_version, #string[]
   use_results_cache, #bool
   unload_projects_on_completion) #bool
+    @logger.debug("BuildProjectFilesInParallel #{project_file_names}, #{target_names}, #{global_properties}, #{target_outputs_per_project}, #{tools_version}, #{use_results_cache}, #{unload_projects_on_completion}")
     return true
   end
 
@@ -44,6 +46,7 @@ class RubyBuildEngine
   global_properties, # IDictionary
   target_outputs #IDictionary
   )
+    @logger.debug("build_project_file #{project_file_name}, #{target_names}, #{global_properties}, #{target_outputs}")
     return true
   end
 
@@ -75,9 +78,7 @@ class RubyBuildEngine
 
 end
 
-logger = Logger.new(STDOUT)
-logger.level = Logger::INFO
-$build_engine = RubyBuildEngine.new(logger)
+$build_engine = RubyBuildEngine.new($logger)
 
 
 

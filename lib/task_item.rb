@@ -2,11 +2,16 @@ require 'Microsoft.Build.Tasks'
 
 class TaskItem
   include Microsoft::Build::Framework::ITaskItem
-  attr_accessor :item_spec
+  attr_accessor :item_spec, :metadata
 
-  def initialize(str)
-    @item_spec = str
-    @metadata = {}
+  def initialize(strOrTaskItem)
+    if strOrTaskItem.kind_of?(TaskItem)
+      @item_spec = strOrTaskItem.item_spec
+      @metadata = strOrTaskItem.metadata
+    else
+      @item_spec = strOrTaskItem
+      @metadata = {}
+    end
   end
 
   def metadata_count
@@ -27,6 +32,11 @@ class TaskItem
     else
       return ""
     end
+  end
+
+  def merge_metadata!(metadata)
+    @metadata.merge!(metadata)
+    return self
   end
 
   def set_metadata(metadata_name, metadata_value) # string,string => void
