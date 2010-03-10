@@ -2,10 +2,10 @@ require 'Microsoft.Build.Tasks'
 require 'log'
 require 'tasks_file'
 require 'task_library'
+require 'enumerator'
 
 class RubyBuildEngine
-  include Microsoft::Build::Framework::IBuildEngine
-  # include Microsoft::Build::Framework::IBuildEngine2
+  include Microsoft::Build::Framework::IBuildEngine2
   attr_reader :column_number_of_task_node, :continue_on_error, :line_number_of_task_node,
                :project_file_of_task_node, :is_running_multiple_nodes
 
@@ -16,6 +16,14 @@ class RubyBuildEngine
     @line_number_of_task_node = 2
     @project_file_of_task_node = "project.file"
     @is_running_multiple_nodes = false
+
+    @inner_engine = Microsoft::Build::BuildEngine::Engine.new
+    @inner_engine.bin_path = System::Runtime::InteropServices::RuntimeEnvironment.get_runtime_directory.replace("v2.0.50727","v3.5")
+    @inner_engine.default_tools_version = '3.5'
+
+    @inner_engine_log = Microsoft::Build::BuildEngine::ConsoleLogger.new
+    @inner_engine.register_logger(@inner_engine_log)
+
   end
 
 
@@ -27,7 +35,10 @@ class RubyBuildEngine
   tools_version #string
   )
     @logger.debug("build_project_file #{project_file_name}, #{target_names}, #{global_properties}, #{target_outputs}, #{tools_version}")
-    return true
+    arguments = "#{project_file_name} \"/t:#{target_names.join(';')}\""
+    @logger.debug("arguments : #{arguments}")
+    return @inner_engine.build_project_file(project_file_name, target_names)
+    # return system("msbuild", arguments)
   end
 
   def BuildProjectFilesInParallel(project_file_names, #string[]
@@ -38,7 +49,10 @@ class RubyBuildEngine
   use_results_cache, #bool
   unload_projects_on_completion) #bool
     @logger.debug("BuildProjectFilesInParallel #{project_file_names}, #{target_names}, #{global_properties}, #{target_outputs_per_project}, #{tools_version}, #{use_results_cache}, #{unload_projects_on_completion}")
-    return true
+    result = project_file_names.map{ |name|
+      @inner_engine.build_project_file(name, target_names)
+    }
+    return result.all?
   end
 
   def build_project_file(project_file_name, # string
@@ -47,7 +61,9 @@ class RubyBuildEngine
   target_outputs #IDictionary
   )
     @logger.debug("build_project_file #{project_file_name}, #{target_names}, #{global_properties}, #{target_outputs}")
-    return true
+    arguments = "#{project_file_name} \"/t:#{target_names.join(';')}\""
+    @logger.debug("arguments : #{arguments}")
+    return @inner_engine.build_project_file(project_file_name, target_names)
   end
 
   def log_event(e)

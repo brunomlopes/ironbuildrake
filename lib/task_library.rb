@@ -106,15 +106,15 @@ class TaskLibrary
       elsif property.property_type == arrayOfITaskItems.to_clr_type
         value = arrayOfITaskItems.new(value.map{ |v| TaskItem.new(v) })
       else
-        raise "Property type #{property.property_type} is not handled"
+        raise "Property type #{property.property_type} for #{property.name} is not handled"
       end
     else
       if property.property_type == System::String.to_clr_type
         value = value.to_s.to_clr_string
-      elsif property.property_type == Microsoft::Build::Framework::ITaskItem
+      elsif property.property_type == Microsoft::Build::Framework::ITaskItem.to_clr_type
         value = TaskItem.new(value)
       else
-        raise "Property type #{property.property_type} is not handled"
+        raise "Property type #{property.property_type} for #{property.name} is not handled"
       end
     end
     return value

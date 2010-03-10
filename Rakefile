@@ -4,7 +4,23 @@ require 'rubygems'
 require "build_engine.rb"
 require 'rake/testtask'
 
-
+begin
+  require 'jeweler'
+  Jeweler::Tasks.new do |gem|
+    gem.name = "ironbuildrake"
+    gem.summary = %Q{Adds support for using msbuild tasks in ironruby with rake }
+    gem.description = %Q{}
+    gem.email = "brunomlopes@gmail.com"
+    gem.homepage = "http://github.com/brunomlopes/ironbuildrake"
+    gem.authors = ["Bruno Lopes"]
+    gem.files = FileList["[A-Z]*", "{lib, test}/**/*" ]
+    gem.platform = "ironruby"
+    # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
+  end
+  Jeweler::GemcutterTasks.new
+rescue LoadError
+  puts "Jeweler (or a dependency) not available. Install it with: sudo gem install jeweler"
+end
 
 require 'rake/testtask'
 Rake::TestTask.new(:test) do |test|
@@ -59,7 +75,7 @@ task :test_scenario_1 do
 end
 
 desc "Run unit tests"
-Rake::TestTask.new("test_units") do |t|
+Rake::TestTask.new("run_tests") do |t|
   t.libs << "test"
   t.pattern = 'test/tests_*.rb'
   t.verbose = true
@@ -73,7 +89,8 @@ task :build_ibrake do
   msbuild.Csc({ :AdditionalLibPaths => ironruby_path,
                 :References => ["IronRuby.dll", "Microsoft.Scripting.dll", "Microsoft.Scripting.Core.dll", "Microsoft.Dynamic.dll"],
                 :Sources => ["tool\\ibrake.cs"],
-                :OutputAssembly => "tool\\ibrake.exe" })
+                :OutputAssembly => "tool\\ibrake.exe",
+                :Platform => "x86"})
 
   msbuild.Copy({ :SourceFiles => ["tool\\ibrake.exe", "tool\\ibrake.exe.config"], :DestinationFolder => ironruby_path })
 end

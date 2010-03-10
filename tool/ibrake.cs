@@ -58,6 +58,7 @@ internal sealed class RubyConsoleHost : ConsoleHost {
 [RubyStackTraceHidden]
     static int Main(string[] args) {
         SetHome();
-        return new RubyConsoleHost().Run(new []{"irake"}.Concat(args).ToArray());
+        var ironruby_path = new System.IO.FileInfo(System.Reflection.Assembly.GetExecutingAssembly().Location).DirectoryName;
+        return new RubyConsoleHost().Run(new []{System.IO.Path.Combine(ironruby_path,"irake")}.Concat(args).ToArray());
     }
 }

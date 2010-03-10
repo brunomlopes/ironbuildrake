@@ -8,7 +8,7 @@ class AssemblyLoader
     @@assembly_paths.add(path) if path != nil
   end
 
-  System::AppDomain.current_domain.assembly_resolve do |sender, event|
+  System::AppDomain.current_domain.assembly_resolve do |sender, event| # sender is appdomain
     found_path = nil
     @@assembly_paths.each do |path|
       assembly_path = System::IO::Path.get_full_path(System::IO::Path.combine(path,event.name))
@@ -20,4 +20,5 @@ class AssemblyLoader
     throw System::IO::FileNotFoundException.new(event.name) unless found_path
     System::Reflection::Assembly.LoadFile(found_path)
   end
+
 end
