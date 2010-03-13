@@ -63,17 +63,6 @@ task :test do
   msbuild.Warning :text => "This is a warning"
 end
 
-task :test_scenario_1 do
-  msbuild = tasks_from_module(Microsoft::Build::Tasks)
-  # this should make the task fail the rake build if has error.
-
-  msbuild.Warning({ :text => "This is a text message" }).fail_on_error
-
-  # or perhaps the best way would be for it to be reversed
-  msbuild.Warning({ :text => "This is a text message" }).proceed_on_error
-
-end
-
 desc "Run unit tests"
 Rake::TestTask.new("run_tests") do |t|
   t.libs << "test"

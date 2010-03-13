@@ -87,7 +87,18 @@ class TaskLibrary
       end
     end
     result = instance.Execute
+
+    output = Hash.new
+    properties.each do |p|
+      if p.get_custom_attributes(Microsoft::Build::Framework::OutputAttribute.to_clr_type).any?
+        # force p.name to be a ruby string, otherwise cannot do output["string"]
+        # added this as a bug on http://ironruby.codeplex.com/WorkItem/View.aspx?WorkItemId=4132
+        output[String(p.name)] = instance.send p.name
+      end
+    end
+
     @logger.debug("result: "+result.to_s)
+    return output
   end
 
   def value_for_property(property, original_value)
@@ -113,7 +124,7 @@ class TaskLibrary
         value = value.to_s.to_clr_string
       elsif property.property_type == Microsoft::Build::Framework::ITaskItem.to_clr_type
         value = TaskItem.new(value)
-      else
+      elsif property.property_type != System::Boolean.to_clr_type
         raise "Property type #{property.property_type} for #{property.name} is not handled"
       end
     end

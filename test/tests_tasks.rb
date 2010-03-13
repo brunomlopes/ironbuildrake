@@ -6,6 +6,7 @@ require 'mocha'
 require 'pathname'
 require 'stringio'
 require 'helper'
+require 'enumerator'
 
 module MSTaskTestUtil
   def mstask_for_engine(build_engine)
@@ -107,6 +108,50 @@ class Delete < Test::Unit::TestCase
     s
   end
 end
+
+class OutputParameters < Test::Unit::TestCase
+  include MSTaskTestUtil
+
+  def test_output_parameter_is_returned_in_dictionary
+    build_engine = default_ruby_build_engine()
+    msbuild = mstask_for_engine(build_engine)
+
+    values = msbuild.FindUnderPath({ :path => "..\\", :files=>"Rakefile"})
+    assert(values.has_key?("InPath"))
+    assert(values["InPath"].any? { |v| v.item_spec == "Rakefile"})
+  end
+
+  def test_input_parameter_is_not_returned_in_dictionary
+    build_engine = default_ruby_build_engine()
+    msbuild = mstask_for_engine(build_engine)
+
+    values = msbuild.FindUnderPath({ :path => "..\\", :files=>"Rakefile"})
+    assert(!values.has_key?("Files"))
+  end
+end
+
+class Parameters < Test::Unit::TestCase
+  include MSTaskTestUtil
+
+  def test_can_assign_boolean_to_value
+    build_engine = default_ruby_build_engine()
+    msbuild = mstask_for_engine(build_engine)
+
+    msbuild.Touch({ :AlwaysCreate => false, :Files => ["tests_tasks.rb"]})
+  end
+end
+
+# task :test_scenario_1 do
+#   msbuild = tasks_from_module(Microsoft::Build::Tasks)
+#   # this should make the task fail the rake build if has error.
+
+#   msbuild.Warning({ :text => "This is a text message" }).fail_on_error
+
+#   # or perhaps the best way would be for it to be reversed
+#   msbuild.Warning({ :text => "This is a text message" }).proceed_on_error
+
+# end
+
 
 class TasksFromTargetFile  < Test::Unit::TestCase
   include MSTaskTestUtil

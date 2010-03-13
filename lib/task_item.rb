@@ -26,6 +26,10 @@ class TaskItem
     return @item_spec
   end
 
+  def ==(other)
+    return to_s == other.to_s
+  end
+
   def get_metadata(metadata_name) # string => string
     if @metadata.has_key?(metadata_name)
       return @metadata[metadata_name]

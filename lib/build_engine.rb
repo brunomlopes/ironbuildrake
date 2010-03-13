@@ -38,7 +38,6 @@ class RubyBuildEngine
     arguments = "#{project_file_name} \"/t:#{target_names.join(';')}\""
     @logger.debug("arguments : #{arguments}")
     return @inner_engine.build_project_file(project_file_name, target_names)
-    # return system("msbuild", arguments)
   end
 
   def BuildProjectFilesInParallel(project_file_names, #string[]
